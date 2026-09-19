@@ -871,7 +871,7 @@
     }
 
     async function syncDataFromCloud() {
-        if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
+        if (WEB_APP_URL && !WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbzyRLh7W6HxWPk4uRKB7Z6wfGC2-r4bKyYQu6zKjUtWoVMFbboRdwHkfY88s3kFvS4p/exec")) {
             try {
                 let response = await fetch(WEB_APP_URL);
                 let result = await response.json();
