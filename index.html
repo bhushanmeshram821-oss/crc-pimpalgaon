@@ -531,7 +531,7 @@
 
 <script>
     const APP_PASSWORD = "1234";
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxRfGA6mj8Kj1BqjyfvygdQ0nXNwijaa2P1k35VhOXWDRL0xALzcsBZgS2OZkoOEQXJ/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyRLh7W6HxWPk4uRKB7Z6wfGC2-r4bKyYQu6zKjUtWoVMFbboRdwHkfY88s3kFvS4p/exec";
 
     function startSystemWithPassword() {
         const pass = prompt("कृपया प्रणाली सुरू करण्यासाठी पासवर्ड टाका (Enter Password):");
@@ -1346,7 +1346,7 @@
 
         localStorage.setItem("schoolVisitsData", JSON.stringify(data));
 
-        renderTable(data);
+        renderTable(displayData);
         updateCounters();
         renderInteractiveCalendar();
     }
@@ -1388,8 +1388,9 @@
                 <td>${mediaHtml}</td>
                 <td style="text-align:center;">${statusBadge}</td>
                 <td class="no-print" style="text-align:center;">
+                    ${item.schoolName === "Sunday/रविवार" ? '-' : `
                     <button class="action-btn edit-btn" onclick="editVisit(${index})">संपादित</button>
-                    <button class="action-btn delete-btn" onclick="deleteVisit(${index})">काढून टाका</button>
+                    <button class="action-btn delete-btn" onclick="deleteVisit(${index})">काढून टाका</button>`}
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1443,8 +1444,9 @@
         const year = document.getElementById('summaryYear').value;
         const month = document.getElementById('summaryMonth').value;
         let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
+        let fullDataWithSundays = autoInsertSundays(data);
 
-        let filtered = data.filter(item => {
+        let filtered = fullDataWithSundays.filter(item => {
             if (!item.visitDate) return false;
             let cleanD = sanitizeDate(item.visitDate);
             let parts = cleanD.split('-');
@@ -1506,8 +1508,9 @@
         const year = document.getElementById('summaryYear').value;
         const month = document.getElementById('summaryMonth').value;
         let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
+        let fullDataWithSundays = autoInsertSundays(data);
 
-        let filtered = data.filter(item => {
+        let filtered = fullDataWithSundays.filter(item => {
             if (!item.visitDate) return false;
             let cleanD = sanitizeDate(item.visitDate);
             let parts = cleanD.split('-');
