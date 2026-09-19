@@ -266,7 +266,22 @@
                 <span>केंद्र समन्वयक: भूषणकुमार बा. मेश्राम  पिंपळगाव/स.</span>
             </div>
 
-            <!-- ★ कॅलेंडर widget आता फॉर्मच्या एकदम वर छोट्या स्वरूपात ठेवले आहे ★ -->
+            <div class="stats-row">
+                <div class="small-circle">
+                    <span class="sc-num" id="prevMonthCount">0</span>
+                    <span class="sc-text">मागील एकूण भेटसंख्या</span>
+                </div>
+                <div class="small-circle">
+                    <span class="sc-num" id="currMonthCount">0</span>
+                    <span class="sc-text">चालू महिना भेटसंख्या</span>
+                </div>
+                <div class="small-circle">
+                    <span class="sc-num" id="currentOngoingCount">0</span>
+                    <span class="sc-text">सध्या चालू असलेली भेट क्र.</span>
+                </div>
+            </div>
+
+            <!-- ★ तीनही वर्तुळाच्या खाली छोटे कॅलेंडर आणले आहे ★ -->
             <div class="form-group">
                 <label>📅 वर्ष व महिना कॅलेंडर (भेट दिलेले दिवस 🍏, सुट्ट्या 🔴):</label>
                 <div class="calendar-widget-box">
@@ -293,46 +308,7 @@
                 </span>
             </div>
 
-            <div class="stats-row">
-                <div class="small-circle">
-                    <span class="sc-num" id="prevMonthCount">0</span>
-                    <span class="sc-text">मागील एकूण भेटसंख्या</span>
-                </div>
-                <div class="small-circle">
-                    <span class="sc-num" id="currMonthCount">0</span>
-                    <span class="sc-text">चालू महिना भेटसंख्या</span>
-                </div>
-                <div class="small-circle">
-                    <span class="sc-num" id="currentOngoingCount">0</span>
-                    <span class="sc-text">सध्या चालू असलेली भेट क्र.</span>
-                </div>
-            </div>
-
             <form id="visitForm" onsubmit="event.preventDefault();">
-                
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <div style="flex: 1;">
-                        <label for="formYearSelect">📅 वर्ष निवडा:</label>
-                        <select id="formYearSelect" onchange="onYearMonthSelectChange()"></select>
-                    </div>
-                    <div style="flex: 1;">
-                        <label for="formMonthSelect">📅 महिना निवडा:</label>
-                        <select id="formMonthSelect" onchange="onYearMonthSelectChange()">
-                            <option value="01">जानेवारी</option>
-                            <option value="02">फेब्रुवारी</option>
-                            <option value="03">मार्च</option>
-                            <option value="04">एप्रिल</option>
-                            <option value="05">मे</option>
-                            <option value="06">जून</option>
-                            <option value="07">जुलै</option>
-                            <option value="08">ऑगस्ट</option>
-                            <option value="09">सप्टेंबर</option>
-                            <option value="10">ऑक्टोबर</option>
-                            <option value="11">नोव्हेंबर</option>
-                            <option value="12">डिसेंबर</option>
-                        </select>
-                    </div>
-                </div>
 
                 <div class="form-group">
                     <label for="centerCategory">🎯 केंद्र / विभाग / कार्य श्रेणी निवडा:</label>
@@ -415,7 +391,7 @@
                 <div class="form-group">
                     <label for="visitMediaInput">📸 भेटीचे फोटो, PDF किंवा व्हिडिओ अपलोड करा (Upload Media):</label>
                     <input type="file" id="visitMediaInput" accept="image/*,application/pdf,video/*" multiple onchange="handleMediaFilesSelect(event)">
-                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स जोडू शकता.</small>
+                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स جوडू शकता.</small>
                     <div id="mediaPreviewBox" class="media-preview-box"></div>
                 </div>
 
@@ -791,35 +767,6 @@
         renderMediaPreviewBox();
     }
 
-    function populateFormYears() {
-        const yearSelect = document.getElementById('formYearSelect');
-        const currentYear = new Date().getFullYear();
-        yearSelect.innerHTML = "";
-        for (let y = 2000; y <= 2050; y++) {
-            let opt = document.createElement('option');
-            opt.value = y;
-            opt.innerText = y;
-            if (y === currentYear) opt.selected = true;
-            yearSelect.appendChild(opt);
-        }
-    }
-
-    function onYearMonthSelectChange() {
-        const yr = document.getElementById('formYearSelect').value;
-        const mo = document.getElementById('formMonthSelect').value;
-        const currentDateVal = document.getElementById('visitDate').value;
-        let dayPart = "01";
-        if (currentDateVal) {
-            let parts = currentDateVal.split('-');
-            if (parts.length === 3) dayPart = parts[2];
-        }
-        const newDateStr = `${yr}-${mo}-${dayPart}`;
-        document.getElementById('visitDate').value = newDateStr;
-        calDisplayDate = new Date(yr, parseInt(mo) - 1, 1);
-        onDateOrSchoolChange();
-        renderInteractiveCalendar();
-    }
-
     function onCategoryChange() {
         const category = document.getElementById('centerCategory').value;
         const schoolSelect = document.getElementById('schoolName');
@@ -954,10 +901,6 @@
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('visitDate').value = today;
         calDisplayDate = new Date();
-
-        populateFormYears();
-        const curM = ("0" + (new Date().getMonth() + 1)).slice(-2);
-        document.getElementById('formMonthSelect').value = curM;
 
         populateYears();
         setCurrentMonthAndYear();
@@ -1296,8 +1239,6 @@
         if (cleanD) {
             let parts = cleanD.split('-');
             if(parts.length === 3) {
-                document.getElementById('formYearSelect').value = parts[0];
-                document.getElementById('formMonthSelect').value = parts[1];
                 calDisplayDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             }
         }
