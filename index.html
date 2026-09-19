@@ -1120,21 +1120,20 @@
         historyBox.style.display = "block";
     }
 
-    async function saveDataToGoogleSheet(dataArray) {
+    // सुधारणा: क्लाउड सिंक आता बॅकग्राउंडमध्ये चालेल (ॲप अडकणार नाही)
+    function saveDataToGoogleSheet(dataArray) {
         if (!WEB_APP_URL || WEB_APP_URL.includes("your-script-url")) return;
-        try {
-            await fetch(WEB_APP_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(dataArray)
-            });
-        } catch (error) {
-            console.error("गुगल शीटवर डेटा सेव्ह करताना त्रुटी आली:", error);
-        }
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dataArray)
+        }).catch(error => {
+            console.error("गुगल शीटवर डेटा बॅकग्राउंडला पाठवताना त्रुटी आली:", error);
+        });
     }
 
-    async function saveOrUpdateVisit() {
+    function saveOrUpdateVisit() {
         const centerCategory = document.getElementById('centerCategory').value;
         const schoolName = document.getElementById('schoolName').value;
         const visitDate = sanitizeDate(document.getElementById('visitDate').value);
@@ -1173,7 +1172,7 @@
         data = recalculateAllVisits(data);
 
         localStorage.setItem("schoolVisitsData", JSON.stringify(data));
-        await saveDataToGoogleSheet(data);
+        saveDataToGoogleSheet(data); // आता हा कॉल बॅकग्राउंडमध्ये होईल, ॲप अजिबात हँग किंवा स्लो होणार नाही
 
         resetFormAndSub();
         document.getElementById('currentOngoingCount').innerText = "0";
@@ -1258,7 +1257,7 @@
         changePage(1);
     }
 
-    async function deleteVisit(index) {
+    function deleteVisit(index) {
         if(confirm("तुम्ही ही नोंद कायमची काढून टाकणार आहात का?")) {
             let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
             data.splice(index, 1);
@@ -1266,7 +1265,7 @@
             data = recalculateAllVisits(data);
 
             localStorage.setItem("schoolVisitsData", JSON.stringify(data));
-            await saveDataToGoogleSheet(data);
+            saveDataToGoogleSheet(data); // बॅकग्राउंड सिंक
 
             if (editingIndex === index) {
                 editingIndex = -1;
