@@ -1120,7 +1120,6 @@
         historyBox.style.display = "block";
     }
 
-    // सुधारणा: क्लाउड सिंक आता बॅकग्राउंडमध्ये चालेल (ॲप अडकणार नाही)
     function saveDataToGoogleSheet(dataArray) {
         if (!WEB_APP_URL || WEB_APP_URL.includes("your-script-url")) return;
         fetch(WEB_APP_URL, {
@@ -1172,7 +1171,7 @@
         data = recalculateAllVisits(data);
 
         localStorage.setItem("schoolVisitsData", JSON.stringify(data));
-        saveDataToGoogleSheet(data); // आता हा कॉल बॅकग्राउंडमध्ये होईल, ॲप अजिबात हँग किंवा स्लो होणार नाही
+        saveDataToGoogleSheet(data);
 
         resetFormAndSub();
         document.getElementById('currentOngoingCount').innerText = "0";
@@ -1211,25 +1210,42 @@
     }
 
     function editVisit(index) {
-        let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
-        let item = data[index];
+        let displayData = autoInsertSundays(JSON.parse(localStorage.getItem("schoolVisitsData") || "[]"));
+        let item = displayData[index];
 
+        if (!item) {
+            alert("डेटा उपलब्ध नाही!");
+            return;
+        }
+
+        // मूळ localStorage मधील डेटाचा अचूक इंडेक्स शोधणे
+        let rawData = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
+        let realIndex = rawData.findIndex(d => sanitizeDate(d.visitDate) === sanitizeDate(item.visitDate) && d.schoolName === item.schoolName);
+
+        if (realIndex === -1) {
+            alert("नोंद सापडली नाही!");
+            return;
+        }
+
+        changePage(1);
+
+        let cat = "Other_Works";
         if (item.centerCategory) {
-            document.getElementById('centerCategory').value = item.centerCategory;
-            onCategoryChange();
+            cat = item.centerCategory;
         } else {
-            let cat = "Other_Works";
             for (let c in schoolsByCategory) {
                 if (schoolsByCategory[c].includes(item.schoolName)) {
                     cat = c;
                     break;
                 }
             }
-            document.getElementById('centerCategory').value = cat;
-            onCategoryChange();
         }
+        
+        document.getElementById('centerCategory').value = cat;
+        onCategoryChange();
 
         document.getElementById('schoolName').value = item.schoolName;
+
         let cleanD = sanitizeDate(item.visitDate);
         document.getElementById('visitDate').value = cleanD;
 
@@ -1240,32 +1256,49 @@
             }
         }
 
-        document.getElementById('travelDistance').value = item.travelDistance;
-        document.getElementById('prevVisits').value = item.prevVisits;
-        document.getElementById('currentVisit').value = item.currentVisit;
-        document.getElementById('visitType').value = item.visitType;
-        document.getElementById('visitDetails').value = item.visitDetails;
+        document.getElementById('travelDistance').value = item.travelDistance || "";
+        document.getElementById('prevVisits').value = item.prevVisits || 0;
+        document.getElementById('currentVisit').value = item.currentVisit || 1;
+        document.getElementById('visitType').value = item.visitType || "";
+        document.getElementById('visitDetails').value = item.visitDetails || "";
 
         currentUploadedMedia = item.mediaFiles ? [...item.mediaFiles] : [];
         renderMediaPreviewBox();
 
-        editingIndex = index;
+        editingIndex = realIndex;
         const btn = document.getElementById('mainSubmitBtn');
         btn.innerHTML = "✔️ अंतिम करा (Final)";
         btn.style.backgroundColor = "#8e44ad";
-
-        changePage(1);
+        
+        renderInteractiveCalendar();
+        updateCounters();
     }
 
+    // सुधारित आणि अचूक डिलीट फंक्शन
     function deleteVisit(index) {
-        if(confirm("तुम्ही ही नोंद कायमची काढून टाकणार आहात का?")) {
+        let displayData = autoInsertSundays(JSON.parse(localStorage.getItem("schoolVisitsData") || "[]"));
+        let targetItem = displayData[index];
+
+        if (!targetItem) {
+            alert("नोंद सापडली नाही!");
+            return;
+        }
+
+        if (targetItem.schoolName === "Sunday/रविवार") {
+            alert("रविवारीय सुट्टीची नोंद काढता येत नाही.");
+            return;
+        }
+
+        if (confirm(`तुम्ही "${targetItem.schoolName}" (${formatDateDDMMYYYY(targetItem.visitDate)}) ही नोंद कायमची काढून टाकणार आहात का?`)) {
             let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
-            data.splice(index, 1);
+            
+            // तारखेनुसार आणि शाळेच्या नावावरून अचूक नोंद काढून टाकणे
+            data = data.filter(item => !(sanitizeDate(item.visitDate) === sanitizeDate(targetItem.visitDate) && item.schoolName === targetItem.schoolName));
             
             data = recalculateAllVisits(data);
 
             localStorage.setItem("schoolVisitsData", JSON.stringify(data));
-            saveDataToGoogleSheet(data); // बॅकग्राउंड सिंक
+            saveDataToGoogleSheet(data);
 
             if (editingIndex === index) {
                 editingIndex = -1;
@@ -1275,6 +1308,7 @@
             }
             populateYears();
             updateUI();
+            alert("✅ नोंद यशस्वीरीत्या काढून टाकली!");
         }
     }
 
