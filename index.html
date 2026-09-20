@@ -871,9 +871,10 @@
     }
 
     async function syncDataFromCloud() {
-        if (WEB_APP_URL && !WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbzyRLh7W6HxWPk4uRKB7Z6wfGC2-r4bKyYQu6zKjUtWoVMFbboRdwHkfY88s3kFvS4p/exec")) {
+        if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
             try {
-                let response = await fetch(WEB_APP_URL);
+                // युनिक टाईमस्टॅम्प जोडून कॅश बायपास केली आहे
+                let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
                 let result = await response.json();
                 if (Array.isArray(result) && result.length > 0) {
                     result.forEach(item => {
@@ -902,6 +903,25 @@
 
         populateYears();
         setCurrentMonthAndYear();
+        
+        // स्वयंचलित बॅकग्राउंड सिंक (कॅश बायपाससह)
+        if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
+            try {
+                let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
+                let result = await response.json();
+                if (Array.isArray(result) && result.length > 0) {
+                    result.forEach(item => {
+                        if (item.visitDate) {
+                            item.visitDate = sanitizeDate(item.visitDate);
+                        }
+                    });
+                    result = recalculateAllVisits(result);
+                    localStorage.setItem("schoolVisitsData", JSON.stringify(result));
+                }
+            } catch (e) {
+                console.log("Background sync offline fallback used.");
+            }
+        }
         updateUI();
     };
 
@@ -1218,7 +1238,6 @@
             return;
         }
 
-        // मूळ localStorage मधील डेटाचा अचूक इंडेक्स शोधणे
         let rawData = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
         let realIndex = rawData.findIndex(d => sanitizeDate(d.visitDate) === sanitizeDate(item.visitDate) && d.schoolName === item.schoolName);
 
@@ -1274,7 +1293,6 @@
         updateCounters();
     }
 
-    // सुधारित आणि अचूक डिलीट फंक्शन
     function deleteVisit(index) {
         let displayData = autoInsertSundays(JSON.parse(localStorage.getItem("schoolVisitsData") || "[]"));
         let targetItem = displayData[index];
@@ -1292,7 +1310,6 @@
         if (confirm(`तुम्ही "${targetItem.schoolName}" (${formatDateDDMMYYYY(targetItem.visitDate)}) ही नोंद कायमची काढून टाकणार आहात का?`)) {
             let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
             
-            // तारखेनुसार आणि शाळेच्या नावावरून अचूक नोंद काढून टाकणे
             data = data.filter(item => !(sanitizeDate(item.visitDate) === sanitizeDate(targetItem.visitDate) && item.schoolName === targetItem.schoolName));
             
             data = recalculateAllVisits(data);
