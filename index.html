@@ -444,6 +444,33 @@
 
             <div style="margin-top: 20px;" id="printArea">
                 <h3 style="text-align: center; color: #2980b9; margin-bottom: 15px;"> दैनंदिन शाळा भेटीची नोंदवही - भूषणकुमार बा. मेश्राम</h3>
+                
+                <!-- वर्ष व महिना फिल्टर नियंत्रणे (Page 3 साठी जोडलेले) -->
+                <div class="summary-controls no-print" style="justify-content: center; margin-bottom: 15px;">
+                    <div>
+                        <label for="tableFilterYear" style="font-size: 12px; margin-bottom: 3px;">वर्ष निवडा:</label>
+                        <select id="tableFilterYear" onchange="updateUI()" style="width: 110px; padding: 6px; font-size: 13px;"></select>
+                    </div>
+                    <div>
+                        <label for="tableFilterMonth" style="font-size: 12px; margin-bottom: 3px;">महिना निवडा:</label>
+                        <select id="tableFilterMonth" onchange="updateUI()" style="width: 120px; padding: 6px; font-size: 13px;">
+                            <option value="ALL">सर्व महिने</option>
+                            <option value="01">जानेवारी</option>
+                            <option value="02">फेब्रुवारी</option>
+                            <option value="03">मार्च</option>
+                            <option value="04">एप्रिल</option>
+                            <option value="05">मे</option>
+                            <option value="06">जून</option>
+                            <option value="07">जुलै</option>
+                            <option value="08">ऑगस्ट</option>
+                            <option value="09">सप्टेंबर</option>
+                            <option value="10">ऑक्टोबर</option>
+                            <option value="11">नोव्हेंबर</option>
+                            <option value="12">डिसेंबर</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div style="margin-bottom: 10px; text-align: center;" class="no-print">
                     <button type="button" class="btn-pdf" onclick="downloadPage3PDF()">📄 PDF डाउनलोड</button>
                     <button type="button" class="btn-excel" onclick="downloadExcel()">📊 Excel डाउनलोड</button>
@@ -873,7 +900,6 @@
     async function syncDataFromCloud() {
         if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
             try {
-                // युनिक टाईमस्टॅम्प जोडून कॅश बायपास केली आहे
                 let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
                 let result = await response.json();
                 if (Array.isArray(result) && result.length > 0) {
@@ -904,7 +930,6 @@
         populateYears();
         setCurrentMonthAndYear();
         
-        // स्वयंचलित बॅकग्राउंड सिंक (कॅश बायपाससह)
         if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
             try {
                 let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
@@ -927,6 +952,7 @@
 
     function populateYears() {
         const yearSelect = document.getElementById('summaryYear');
+        const tableYearSelect = document.getElementById('tableFilterYear');
         const currentYear = new Date().getFullYear();
         let yearSet = new Set();
 
@@ -947,21 +973,43 @@
         });
 
         let sortedYears = Array.from(yearSet).sort((a, b) => a - b);
-        yearSelect.innerHTML = "";
+        
+        if (yearSelect) {
+            yearSelect.innerHTML = "";
+            sortedYears.forEach(y => {
+                let option = document.createElement('option');
+                option.value = y;
+                option.innerText = y;
+                if (y === currentYear) option.selected = true;
+                yearSelect.appendChild(option);
+            });
+        }
 
-        sortedYears.forEach(y => {
-            let option = document.createElement('option');
-            option.value = y;
-            option.innerText = y;
-            if (y === currentYear) option.selected = true;
-            yearSelect.appendChild(option);
-        });
+        if (tableYearSelect) {
+            let prevVal = tableYearSelect.value;
+            tableYearSelect.innerHTML = "";
+            sortedYears.forEach(y => {
+                let option = document.createElement('option');
+                option.value = y;
+                option.innerText = y;
+                if (prevVal ? (parseInt(prevVal) === y) : (y === currentYear)) {
+                    option.selected = true;
+                }
+                tableYearSelect.appendChild(option);
+            });
+            if (!tableYearSelect.value && sortedYears.length > 0) {
+                tableYearSelect.value = currentYear;
+            }
+        }
     }
 
     function setCurrentMonthAndYear() {
         const d = new Date();
         const m = ("0" + (d.getMonth() + 1)).slice(-2);
-        document.getElementById('summaryMonth').value = m;
+        const sumMonthEl = document.getElementById('summaryMonth');
+        const tableMonthEl = document.getElementById('tableFilterMonth');
+        if (sumMonthEl) sumMonthEl.value = m;
+        if (tableMonthEl) tableMonthEl.value = m; // डीफॉल्ट चालू महिना
     }
 
     function onSchoolChange() {
@@ -1231,6 +1279,19 @@
 
     function editVisit(index) {
         let displayData = autoInsertSundays(JSON.parse(localStorage.getItem("schoolVisitsData") || "[]"));
+        
+        // फिल्टर लागू असल्यास योग्य इंडेक्स शोधणे
+        let filterYear = document.getElementById('tableFilterYear')?.value;
+        let filterMonth = document.getElementById('tableFilterMonth')?.value;
+        if (filterYear && filterMonth && filterMonth !== 'ALL') {
+            displayData = displayData.filter(item => {
+                if (!item.visitDate) return false;
+                let cleanD = sanitizeDate(item.visitDate);
+                let parts = cleanD.split('-');
+                return parts[0] === filterYear && parts[1] === filterMonth;
+            });
+        }
+
         let item = displayData[index];
 
         if (!item) {
@@ -1295,6 +1356,18 @@
 
     function deleteVisit(index) {
         let displayData = autoInsertSundays(JSON.parse(localStorage.getItem("schoolVisitsData") || "[]"));
+        
+        let filterYear = document.getElementById('tableFilterYear')?.value;
+        let filterMonth = document.getElementById('tableFilterMonth')?.value;
+        if (filterYear && filterMonth && filterMonth !== 'ALL') {
+            displayData = displayData.filter(item => {
+                if (!item.visitDate) return false;
+                let cleanD = sanitizeDate(item.visitDate);
+                let parts = cleanD.split('-');
+                return parts[0] === filterYear && parts[1] === filterMonth;
+            });
+        }
+
         let targetItem = displayData[index];
 
         if (!targetItem) {
@@ -1395,6 +1468,26 @@
         let displayData = autoInsertSundays(data);
 
         localStorage.setItem("schoolVisitsData", JSON.stringify(data));
+
+        // पेज ३ वरील वर्ष व महिना फिल्टर लागू करणे
+        const filterYear = document.getElementById('tableFilterYear')?.value;
+        const filterMonth = document.getElementById('tableFilterMonth')?.value;
+
+        if (filterYear && filterMonth && filterMonth !== 'ALL') {
+            displayData = displayData.filter(item => {
+                if (!item.visitDate) return false;
+                let cleanD = sanitizeDate(item.visitDate);
+                let parts = cleanD.split('-');
+                return parts[0] === filterYear && parts[1] === filterMonth;
+            });
+        } else if (filterYear) {
+            displayData = displayData.filter(item => {
+                if (!item.visitDate) return false;
+                let cleanD = sanitizeDate(item.visitDate);
+                let parts = cleanD.split('-');
+                return parts[0] === filterYear;
+            });
+        }
 
         renderTable(displayData);
         updateCounters();
@@ -1715,8 +1808,28 @@
     }
 
     function downloadExcel() {
+        const filterYear = document.getElementById('tableFilterYear')?.value;
+        const filterMonth = document.getElementById('tableFilterMonth')?.value;
         let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
-        let exportData = data.map((item, idx) => ({
+        let displayData = autoInsertSundays(data);
+
+        if (filterYear && filterMonth && filterMonth !== 'ALL') {
+            displayData = displayData.filter(item => {
+                if (!item.visitDate) return false;
+                let cleanD = sanitizeDate(item.visitDate);
+                let parts = cleanD.split('-');
+                return parts[0] === filterYear && parts[1] === filterMonth;
+            });
+        } else if (filterYear) {
+            displayData = displayData.filter(item => {
+                if (!item.visitDate) return false;
+                let cleanD = sanitizeDate(item.visitDate);
+                let parts = cleanD.split('-');
+                return parts[0] === filterYear;
+            });
+        }
+
+        let exportData = displayData.map((item, idx) => ({
             "अ.क्र.": idx + 1,
             "दिनांक": sanitizeDate(item.visitDate),
             "शाळेचे नाव / ठिकाण": item.schoolName,
