@@ -192,8 +192,7 @@
             <marquee behavior="scroll" direction="left" scrollamount="5" style="color: #f1c40f; font-weight: bold; font-size: 15px; letter-spacing: 1px;">
                 🌟 दैनंदिन भेट नोंदणी प्रणाली 🌟 स्वागत आहे! 🌟 CRC PIMPALGAON/S. 🌟 केंद्र समन्वयक: भूषणकुमार बा. मेश्राम 🌟
             </marquee>
-            <div style="display: flex; gap: 8px;">
-                <button class="sync-btn-top" onclick="importOldSheetDataOnce()">📥 जुनी शीट डेटा आणा</button>
+            <div>
                 <button class="sync-btn-top" onclick="syncDataFromCloud()">🔄 डेटा सिंक करा</button>
             </div>
         </div>
@@ -560,7 +559,7 @@
 
 <script>
     const APP_PASSWORD = "1234";
-    // येथे तुमची नवीन Google Web App URL टाका
+    // येथे तुमची Google Web App URL आहे
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxiadpzV7zB1WDUOCnFhQ3joJM95lj_siUGUxjJ4OUCVi67eKHrm5LI1DPVq2i_rXW9/exec";
 
     function startSystemWithPassword() {
@@ -901,71 +900,55 @@
         }
     }
 
+    // स्वयंचलित आणि सुरक्षित सिंक फंक्शन (दोन्ही बाजूंचा डेटा सुरक्षित ठेवते)
     async function syncDataFromCloud() {
         if (WEB_APP_URL) {
             try {
                 let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
-                let result = await response.json();
-                if (Array.isArray(result) && result.length > 0) {
-                    result.forEach(item => {
-                        if (item.visitDate) {
-                            item.visitDate = sanitizeDate(item.visitDate);
-                        }
+                let cloudData = await response.json();
+                
+                if (Array.isArray(cloudData) && cloudData.length > 0) {
+                    let localData = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
+                    let mergedMap = new Map();
+
+                    // आधी लोकल डेटा ऍड करणे
+                    localData.forEach(item => {
+                        if (item.visitDate) item.visitDate = sanitizeDate(item.visitDate);
                         if (typeof item.mediaFiles === 'string') {
                             try { item.mediaFiles = JSON.parse(item.mediaFiles); } catch(e) { item.mediaFiles = []; }
                         }
-                        if (!Array.isArray(item.mediaFiles)) {
-                            item.mediaFiles = [];
+                        let key = `${sanitizeDate(item.visitDate)}_${item.schoolName}`;
+                        mergedMap.set(key, item);
+                    });
+
+                    // क्लाउड डेटा मर्ज करणे (जर आधीपासून नसेल तर किंवा अपडेटेड असेल तर)
+                    cloudData.forEach(item => {
+                        if (item.visitDate) item.visitDate = sanitizeDate(item.visitDate);
+                        if (typeof item.mediaFiles === 'string') {
+                            try { item.mediaFiles = JSON.parse(item.mediaFiles); } catch(e) { item.mediaFiles = []; }
+                        }
+                        if (!Array.isArray(item.mediaFiles)) item.mediaFiles = [];
+                        
+                        let key = `${sanitizeDate(item.visitDate)}_${item.schoolName}`;
+                        if (!mergedMap.has(key)) {
+                            mergedMap.set(key, item);
                         }
                     });
-                    result = recalculateAllVisits(result);
-                    localStorage.setItem("schoolVisitsData", JSON.stringify(result));
+
+                    let finalData = Array.from(mergedMap.values());
+                    finalData = recalculateAllVisits(finalData);
+
+                    localStorage.setItem("schoolVisitsData", JSON.stringify(finalData));
+                    saveDataToGoogleSheet(finalData); // क्लाउडवर अपडेटेड डेटा पाठवणे
                     updateUI();
-                    alert("✅ क्लाउडवरून डेटा यशस्वीरीत्या सिंक झाला!");
+
+                    alert("✅ डेटा यशस्वीरीत्या सिंक झाला आणि सर्व माहिती (मीडियासह) सुरक्षित आहे!");
                 } else {
-                    alert("ℹ️ क्लाउडवर सध्या कोणतीही नोंद उपलब्ध नाही किंवा शीट रिकामी आहे.");
+                    alert("ℹ️ क्लाउडवर सध्या डेटा उपलब्ध नाही.");
                 }
             } catch (error) {
                 console.error("सिंक करताना त्रुटी आली:", error);
-                alert("❌ डेटा सिंक करताना अडचण आली. कृपया इंटरनेट कनेक्शन किंवा URL तपासा.");
-            }
-        }
-    }
-
-    // एकदाच जुन्या Google Sheet मधील माहिती जशीच्या तशी घेण्याची सुविधा (One-time Import)
-    async function importOldSheetDataOnce() {
-        if (!confirm("तुम्हाला जुन्या Google Sheet मधून डेटा इंपोर्ट (Import) करायचा आहे का?")) return;
-        if (WEB_APP_URL) {
-            try {
-                let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
-                let result = await response.json();
-                if (Array.isArray(result) && result.length > 0) {
-                    let existingData = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
-                    
-                    result.forEach(newItem => {
-                        if (newItem.visitDate) newItem.visitDate = sanitizeDate(newItem.visitDate);
-                        if (typeof newItem.mediaFiles === 'string') {
-                            try { newItem.mediaFiles = JSON.parse(newItem.mediaFiles); } catch(e) { newItem.mediaFiles = []; }
-                        }
-                        if (!Array.isArray(newItem.mediaFiles)) newItem.mediaFiles = [];
-
-                        // डुप्लिकेट तपासणी करून जुना डेटा मर्ज करणे
-                        let exists = existingData.some(ex => sanitizeDate(ex.visitDate) === sanitizeDate(newItem.visitDate) && ex.schoolName === newItem.schoolName);
-                        if (!exists) {
-                            existingData.push(newItem);
-                        }
-                    });
-
-                    existingData = recalculateAllVisits(existingData);
-                    localStorage.setItem("schoolVisitsData", JSON.stringify(existingData));
-                    updateUI();
-                    alert("✅ जुन्या शीटमधील डेटा यशस्वीरीत्या इंपोर्ट झाला!");
-                } else {
-                    alert("ℹ️ जुन्या शीटमध्ये कोणतीही नोंद आढळली नाही.");
-                }
-            } catch (error) {
-                console.error("इमपोर्ट करताना त्रुटी:", error);
-                alert("❌ जुना डेटा आणताना अडचण आली.");
+                alert("❌ डेटा सिंक करताना अडचण आली. कृपया इंटरनेट कनेक्शन तपासा.");
             }
         }
     }
@@ -978,24 +961,39 @@
         populateYears();
         setCurrentMonthAndYear();
         
+        // पेज सुरू झाल्यावर आपोआप क्लाउडवरून डेटा घेऊन लोकलस्टोरेजमध्ये सुरक्षित सिंक करेल
         if (WEB_APP_URL) {
             try {
                 let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
                 let result = await response.json();
                 if (Array.isArray(result) && result.length > 0) {
-                    result.forEach(item => {
-                        if (item.visitDate) {
-                            item.visitDate = sanitizeDate(item.visitDate);
-                        }
+                    let localData = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
+                    let mergedMap = new Map();
+
+                    localData.forEach(item => {
+                        if (item.visitDate) item.visitDate = sanitizeDate(item.visitDate);
                         if (typeof item.mediaFiles === 'string') {
                             try { item.mediaFiles = JSON.parse(item.mediaFiles); } catch(e) { item.mediaFiles = []; }
                         }
-                        if (!Array.isArray(item.mediaFiles)) {
-                            item.mediaFiles = [];
+                        let key = `${sanitizeDate(item.visitDate)}_${item.schoolName}`;
+                        mergedMap.set(key, item);
+                    });
+
+                    result.forEach(item => {
+                        if (item.visitDate) item.visitDate = sanitizeDate(item.visitDate);
+                        if (typeof item.mediaFiles === 'string') {
+                            try { item.mediaFiles = JSON.parse(item.mediaFiles); } catch(e) { item.mediaFiles = []; }
+                        }
+                        if (!Array.isArray(item.mediaFiles)) item.mediaFiles = [];
+                        let key = `${sanitizeDate(item.visitDate)}_${item.schoolName}`;
+                        if (!mergedMap.has(key)) {
+                            mergedMap.set(key, item);
                         }
                     });
-                    result = recalculateAllVisits(result);
-                    localStorage.setItem("schoolVisitsData", JSON.stringify(result));
+
+                    let finalData = Array.from(mergedMap.values());
+                    finalData = recalculateAllVisits(finalData);
+                    localStorage.setItem("schoolVisitsData", JSON.stringify(finalData));
                 }
             } catch (e) {
                 console.log("Background sync offline fallback used.");
