@@ -559,7 +559,7 @@
 
 <script>
     const APP_PASSWORD = "1234";
-    // येथे तुमची Google Web App URL आहे
+    // येथे तुमची गुगल वेब ऍप युआरएल (Google Web App URL) आहे
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2Abi-wnNLnGDjNdH0UjdqJcvX-0RE8QXcU5ShL0C7Piz84UI6rTHXggd8zKy5Bk7g/exec";
 
     function startSystemWithPassword() {
@@ -844,36 +844,31 @@
         return false;
     }
 
-    // तारीख अचूक स्वरूपात ठेवण्यासाठी (वेळ किंवा टाइमझोनमुळे बदल होऊ नये म्हणून)
+    // तारीख बदलू नये (एक दिवस मागे जाऊ नये) म्हणून लोकल तारीख पार्सिंग
     function sanitizeDate(dateStr) {
         if (!dateStr) return "";
         let str = String(dateStr).trim();
         if (str.includes('T')) {
             str = str.split('T')[0];
         }
-        let dObj = new Date(str);
-        if (!isNaN(dObj.getTime()) && !str.includes('-') && !str.includes('/')) {
-            let y = dObj.getFullYear();
-            let m = String(dObj.getMonth() + 1).padStart(2, '0');
-            let d = String(dObj.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
+        let parts = str.split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+            return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
         }
         if (str.includes('/')) {
-            let parts = str.split('/');
-            if (parts.length === 3) {
-                if (parts[2].length === 4) {
-                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            let p = str.split('/');
+            if (p.length === 3) {
+                if (p[2].length === 4) {
+                    return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
                 }
             }
         }
-        let p = str.split('-');
-        if (p.length === 3) {
-            if (p[0].length === 2 && p[2].length === 4) {
-                return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
-            }
-            if (p[0].length === 4) {
-                return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`;
-            }
+        let d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            let yr = d.getFullYear();
+            let mo = String(d.getMonth() + 1).padStart(2, '0');
+            let dy = String(d.getDate()).padStart(2, '0');
+            return `${yr}-${mo}-${dy}`;
         }
         return str;
     }
@@ -913,7 +908,7 @@
         }
     }
 
-    // स्वयंचलित आणि सुरक्षित सिंक फंक्शन (डेटा आणि मीडिया सुरक्षित ठेवणारे)
+    // क्लाउड आणि लॅपटॉप/मोबाईल डेटा सुरक्षित सिंक करणारे फंक्शन
     async function syncDataFromCloud() {
         if (WEB_APP_URL) {
             try {
@@ -953,7 +948,7 @@
                     saveDataToGoogleSheet(finalData);
                     updateUI();
 
-                    alert("✅ डेटा यशस्वीरीत्या सिंक झाला आणि सर्व माहिती (दिनांकासह) सुरक्षित आहे!");
+                    alert("✅ डेटा आणि मीडिया यशस्वीरीत्या सिंक झाले!");
                 } else {
                     alert("ℹ️ क्लाउडवर सध्या डेटा उपलब्ध नाही.");
                 }
@@ -965,8 +960,12 @@
     }
 
     window.onload = async function() {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('visitDate').value = today;
+        // आजची तारीख अचूक सेट करणे
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        document.getElementById('visitDate').value = `${year}-${month}-${day}`;
         calDisplayDate = new Date();
 
         populateYears();
@@ -1260,6 +1259,7 @@
         if (!WEB_APP_URL) return;
         let payload = dataArray.map(item => ({
             ...item,
+            visitDate: sanitizeDate(item.visitDate),
             mediaFiles: JSON.stringify(item.mediaFiles || [])
         }));
         fetch(WEB_APP_URL, {
@@ -1268,7 +1268,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         }).catch(error => {
-            console.error("गुगल शीटवर डेटा बॅकग्राउंडला पाठवताना त्रुटी आली:", error);
+            console.error("गुगल शीटवर डेटा पाठवताना त्रुटी आली:", error);
         });
     }
 
@@ -1323,8 +1323,11 @@
 
     function resetFormAndSub() {
         document.getElementById('visitForm').reset();
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('visitDate').value = today;
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        document.getElementById('visitDate').value = `${year}-${month}-${day}`;
         document.getElementById('schoolName').innerHTML = '<option value="">-- आधी वरील श्रेणी निवडा --</option>';
         document.getElementById('schoolName').disabled = true;
         document.getElementById('travelDistance').value = "";
