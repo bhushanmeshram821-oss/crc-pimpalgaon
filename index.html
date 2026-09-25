@@ -192,7 +192,7 @@
             <marquee behavior="scroll" direction="left" scrollamount="5" style="color: #f1c40f; font-weight: bold; font-size: 15px; letter-spacing: 1px;">
                 🌟 दैनंदिन भेट नोंदणी प्रणाली 🌟 स्वागत आहे! 🌟 CRC PIMPALGAON/S. 🌟 केंद्र समन्वयक: भूषणकुमार बा. मेश्राम 🌟
             </marquee>
-            <button class="sync-btn-top" onclick="syncDataFromCloud()">⚡ जलद सेव्ह (Fast Sync)</button>
+            <button class="sync-btn-top" onclick="syncDataFromCloud()">🔄 डेटा सिंक करा</button>
         </div>
     </div>
 
@@ -244,7 +244,7 @@
                     </div>
                     <div class="feature-item">
                         <b>📸 मीडिया अपलोड</b>
-                        प्रत्येक भेटीचे फोटो, PDF आणि व्हिडिओ सुरक्षितपणे साठवून पाहण्याची सुविधा (Permanent Storage).
+                        प्रत्येक भेटीचे फोटो, PDF आणि व्हिडिओ सुरक्षितपणे साठवून पाहण्याची सुविधा.
                     </div>
                 </div>
 
@@ -389,12 +389,12 @@
                 <div class="form-group">
                     <label for="visitMediaInput">📸 भेटीचे फोटो, PDF किंवा व्हिडिओ अपलोड करा (Upload Media):</label>
                     <input type="file" id="visitMediaInput" accept="image/*,application/pdf,video/*" multiple onchange="handleMediaFilesSelect(event)">
-                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स जोडू शकता (फॅस्ट सेव्ह सुविधेसह).</small>
+                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स जोडू शकता.</small>
                     <div id="mediaPreviewBox" class="media-preview-box"></div>
                 </div>
 
                 <div class="button-area">
-                    <button type="button" id="mainSubmitBtn" class="btn-add" onclick="saveOrUpdateVisit()">⚡ जलद माहिती जोडा (Fast Add)</button>
+                    <button type="button" id="mainSubmitBtn" class="btn-add" onclick="saveOrUpdateVisit()">➕ माहिती जोडा (Add)</button>
                     <button type="button" class="btn-clear" onclick="clearFormOnly()">🗑️ फॉर्म पुसा (Clear Form)</button>
                 </div>
             </form>
@@ -445,7 +445,7 @@
             <div style="margin-top: 20px;" id="printArea">
                 <h3 style="text-align: center; color: #2980b9; margin-bottom: 15px;"> दैनंदिन शाळा भेटीची नोंदवही - भूषणकुमार बा. मेश्राम</h3>
                 
-                <!-- वर्ष व महिना फिल्टर नियंत्रणे -->
+                <!-- वर्ष व महिना फिल्टर नियंत्रणे (Page 3 साठी जोडलेले) -->
                 <div class="summary-controls no-print" style="justify-content: center; margin-bottom: 15px;">
                     <div>
                         <label for="tableFilterYear" style="font-size: 12px; margin-bottom: 3px;">वर्ष निवडा:</label>
@@ -558,6 +558,7 @@
 
 <script>
     const APP_PASSWORD = "1234";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyRLh7W6HxWPk4uRKB7Z6wfGC2-r4bKyYQu6zKjUtWoVMFbboRdwHkfY88s3kFvS4p/exec";
 
     function startSystemWithPassword() {
         const pass = prompt("कृपया प्रणाली सुरू करण्यासाठी पासवर्ड टाका (Enter Password):");
@@ -896,17 +897,56 @@
         }
     }
 
-    function syncDataFromCloud() {
-        alert("⚡ जलद सिंक यशस्वी! सर्व डेटा आणि मीडिया फाईल्स ब्राउझरमध्ये सुरक्षित आहेत.");
+    async function syncDataFromCloud() {
+        if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
+            try {
+                let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
+                let result = await response.json();
+                if (Array.isArray(result) && result.length > 0) {
+                    result.forEach(item => {
+                        if (item.visitDate) {
+                            item.visitDate = sanitizeDate(item.visitDate);
+                        }
+                    });
+                    result = recalculateAllVisits(result);
+                    localStorage.setItem("schoolVisitsData", JSON.stringify(result));
+                    updateUI();
+                    alert("✅ क्लाउडवरून डेटा यशस्वीरीत्या सिंक झाला!");
+                } else {
+                    alert("ℹ️ क्लाउडवर सध्या कोणतीही जुनी नोंद उपलब्ध नाही किंवा शीट रिकामी आहे.");
+                }
+            } catch (error) {
+                console.error("सिंक करताना त्रुटी आली:", error);
+                alert("❌ डेटा सिंक करताना अडचण आली. कृपया इंटरनेट कनेक्शन किंवा URL तपासा.");
+            }
+        }
     }
 
-    window.onload = function() {
+    window.onload = async function() {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('visitDate').value = today;
         calDisplayDate = new Date();
 
         populateYears();
         setCurrentMonthAndYear();
+        
+        if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
+            try {
+                let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
+                let result = await response.json();
+                if (Array.isArray(result) && result.length > 0) {
+                    result.forEach(item => {
+                        if (item.visitDate) {
+                            item.visitDate = sanitizeDate(item.visitDate);
+                        }
+                    });
+                    result = recalculateAllVisits(result);
+                    localStorage.setItem("schoolVisitsData", JSON.stringify(result));
+                }
+            } catch (e) {
+                console.log("Background sync offline fallback used.");
+            }
+        }
         updateUI();
     };
 
@@ -969,7 +1009,7 @@
         const sumMonthEl = document.getElementById('summaryMonth');
         const tableMonthEl = document.getElementById('tableFilterMonth');
         if (sumMonthEl) sumMonthEl.value = m;
-        if (tableMonthEl) tableMonthEl.value = m;
+        if (tableMonthEl) tableMonthEl.value = m; // डीफॉल्ट चालू महिना
     }
 
     function onSchoolChange() {
@@ -1148,6 +1188,18 @@
         historyBox.style.display = "block";
     }
 
+    function saveDataToGoogleSheet(dataArray) {
+        if (!WEB_APP_URL || WEB_APP_URL.includes("your-script-url")) return;
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dataArray)
+        }).catch(error => {
+            console.error("गुगल शीटवर डेटा बॅकग्राउंडला पाठवताना त्रुटी आली:", error);
+        });
+    }
+
     function saveOrUpdateVisit() {
         const centerCategory = document.getElementById('centerCategory').value;
         const schoolName = document.getElementById('schoolName').value;
@@ -1173,20 +1225,21 @@
         if (editingIndex > -1) {
             data[editingIndex] = visitData;
             editingIndex = -1;
-            btn.innerHTML = "⚡ जलद माहिती जोडा (Fast Add)";
+            btn.innerHTML = "➕ माहिती जोडा (Add)";
             btn.style.backgroundColor = "#27ae60";
-            alert("✅ माहिती जलदगत्या अपडेट केली!");
+            alert("✅ माहिती यशस्वीरीत्या अपडेट केली!");
         } else {
             if (schoolName !== "Sunday/रविवार") {
                 data = data.filter(item => !(sanitizeDate(item.visitDate) === visitDate && item.schoolName === "Sunday/रविवार"));
             }
             data.push(visitData);
-            alert("✅ माहिती जलदगत्या जोडली!");
+            alert("✅ माहिती यशस्वीरीत्या जोडली!");
         }
 
         data = recalculateAllVisits(data);
 
         localStorage.setItem("schoolVisitsData", JSON.stringify(data));
+        saveDataToGoogleSheet(data);
 
         resetFormAndSub();
         document.getElementById('currentOngoingCount').innerText = "0";
@@ -1217,7 +1270,7 @@
             if (editingIndex > -1) {
                 editingIndex = -1;
                 const btn = document.getElementById('mainSubmitBtn');
-                btn.innerHTML = "⚡ जलद माहिती जोडा (Fast Add)";
+                btn.innerHTML = "➕ माहिती जोडा (Add)";
                 btn.style.backgroundColor = "#27ae60";
             }
             updateCounters();
@@ -1227,6 +1280,7 @@
     function editVisit(index) {
         let displayData = autoInsertSundays(JSON.parse(localStorage.getItem("schoolVisitsData") || "[]"));
         
+        // फिल्टर लागू असल्यास योग्य इंडेक्स शोधणे
         let filterYear = document.getElementById('tableFilterYear')?.value;
         let filterMonth = document.getElementById('tableFilterMonth')?.value;
         if (filterYear && filterMonth && filterMonth !== 'ALL') {
@@ -1334,10 +1388,11 @@
             data = recalculateAllVisits(data);
 
             localStorage.setItem("schoolVisitsData", JSON.stringify(data));
+            saveDataToGoogleSheet(data);
 
             if (editingIndex === index) {
                 editingIndex = -1;
-                document.getElementById('mainSubmitBtn').innerHTML = "⚡ जलद माहिती जोडा (Fast Add)";
+                document.getElementById('mainSubmitBtn').innerHTML = "➕ माहिती जोडा (Add)";
                 document.getElementById('mainSubmitBtn').style.backgroundColor = "#27ae60";
                 resetFormAndSub();
             }
@@ -1414,6 +1469,7 @@
 
         localStorage.setItem("schoolVisitsData", JSON.stringify(data));
 
+        // पेज ३ वरील वर्ष व महिना फिल्टर लागू करणे
         const filterYear = document.getElementById('tableFilterYear')?.value;
         const filterMonth = document.getElementById('tableFilterMonth')?.value;
 
