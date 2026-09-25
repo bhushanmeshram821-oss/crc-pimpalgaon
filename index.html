@@ -192,7 +192,7 @@
             <marquee behavior="scroll" direction="left" scrollamount="5" style="color: #f1c40f; font-weight: bold; font-size: 15px; letter-spacing: 1px;">
                 🌟 दैनंदिन भेट नोंदणी प्रणाली 🌟 स्वागत आहे! 🌟 CRC PIMPALGAON/S. 🌟 केंद्र समन्वयक: भूषणकुमार बा. मेश्राम 🌟
             </marquee>
-            <button class="sync-btn-top" onclick="syncDataFromCloud()">🔄 डेटा सिंक करा</button>
+            <button class="sync-btn-top" onclick="syncDataFromCloud()">⚡ जलद सेव्ह (Fast Sync)</button>
         </div>
     </div>
 
@@ -389,12 +389,12 @@
                 <div class="form-group">
                     <label for="visitMediaInput">📸 भेटीचे फोटो, PDF किंवा व्हिडिओ अपलोड करा (Upload Media):</label>
                     <input type="file" id="visitMediaInput" accept="image/*,application/pdf,video/*" multiple onchange="handleMediaFilesSelect(event)">
-                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स जोडू शकता (ह्या फाईल्स फॉर्ममध्ये कायमस्वरूपी सेव्ह राहतील).</small>
+                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स जोडू शकता (फॅस्ट सेव्ह सुविधेसह).</small>
                     <div id="mediaPreviewBox" class="media-preview-box"></div>
                 </div>
 
                 <div class="button-area">
-                    <button type="button" id="mainSubmitBtn" class="btn-add" onclick="saveOrUpdateVisit()">➕ माहिती जोडा (Add)</button>
+                    <button type="button" id="mainSubmitBtn" class="btn-add" onclick="saveOrUpdateVisit()">⚡ जलद माहिती जोडा (Fast Add)</button>
                     <button type="button" class="btn-clear" onclick="clearFormOnly()">🗑️ फॉर्म पुसा (Clear Form)</button>
                 </div>
             </form>
@@ -558,7 +558,6 @@
 
 <script>
     const APP_PASSWORD = "1234";
-    const WEB_APP_URL = ""; // गुगल शीट URL अनिवार्य नाही, डेटा आणि फोटो थेट एचटीएमएल मध्ये सुरक्षित राहतील
 
     function startSystemWithPassword() {
         const pass = prompt("कृपया प्रणाली सुरू करण्यासाठी पासवर्ड टाका (Enter Password):");
@@ -898,7 +897,7 @@
     }
 
     function syncDataFromCloud() {
-        alert("✅ सर्व डेटा आणि मीडिया फाईल्स तुमच्या ब्राउझरमध्ये कायमस्वरूपी सेव्ह आहेत!");
+        alert("⚡ जलद सिंक यशस्वी! सर्व डेटा आणि मीडिया फाईल्स ब्राउझरमध्ये सुरक्षित आहेत.");
     }
 
     window.onload = function() {
@@ -1174,15 +1173,15 @@
         if (editingIndex > -1) {
             data[editingIndex] = visitData;
             editingIndex = -1;
-            btn.innerHTML = "➕ माहिती जोडा (Add)";
+            btn.innerHTML = "⚡ जलद माहिती जोडा (Fast Add)";
             btn.style.backgroundColor = "#27ae60";
-            alert("✅ माहिती यशस्वीरीत्या अपडेट केली!");
+            alert("✅ माहिती जलदगत्या अपडेट केली!");
         } else {
             if (schoolName !== "Sunday/रविवार") {
                 data = data.filter(item => !(sanitizeDate(item.visitDate) === visitDate && item.schoolName === "Sunday/रविवार"));
             }
             data.push(visitData);
-            alert("✅ माहिती यशस्वीरीत्या जोडली!");
+            alert("✅ माहिती जलदगत्या जोडली!");
         }
 
         data = recalculateAllVisits(data);
@@ -1218,7 +1217,7 @@
             if (editingIndex > -1) {
                 editingIndex = -1;
                 const btn = document.getElementById('mainSubmitBtn');
-                btn.innerHTML = "➕ माहिती जोडा (Add)";
+                btn.innerHTML = "⚡ जलद माहिती जोडा (Fast Add)";
                 btn.style.backgroundColor = "#27ae60";
             }
             updateCounters();
@@ -1338,7 +1337,7 @@
 
             if (editingIndex === index) {
                 editingIndex = -1;
-                document.getElementById('mainSubmitBtn').innerHTML = "➕ माहिती जोडा (Add)";
+                document.getElementById('mainSubmitBtn').innerHTML = "⚡ जलद माहिती जोडा (Fast Add)";
                 document.getElementById('mainSubmitBtn').style.backgroundColor = "#27ae60";
                 resetFormAndSub();
             }
