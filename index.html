@@ -844,11 +844,19 @@
         return false;
     }
 
+    // तारीख अचूक स्वरूपात ठेवण्यासाठी (वेळ किंवा टाइमझोनमुळे बदल होऊ नये म्हणून)
     function sanitizeDate(dateStr) {
         if (!dateStr) return "";
         let str = String(dateStr).trim();
         if (str.includes('T')) {
             str = str.split('T')[0];
+        }
+        let dObj = new Date(str);
+        if (!isNaN(dObj.getTime()) && !str.includes('-') && !str.includes('/')) {
+            let y = dObj.getFullYear();
+            let m = String(dObj.getMonth() + 1).padStart(2, '0');
+            let d = String(dObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
         }
         if (str.includes('/')) {
             let parts = str.split('/');
@@ -859,8 +867,13 @@
             }
         }
         let p = str.split('-');
-        if (p.length === 3 && p[0].length === 2 && p[2].length === 4) {
-            return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+        if (p.length === 3) {
+            if (p[0].length === 2 && p[2].length === 4) {
+                return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+            }
+            if (p[0].length === 4) {
+                return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`;
+            }
         }
         return str;
     }
@@ -900,7 +913,7 @@
         }
     }
 
-    // स्वयंचलित आणि सुरक्षित सिंक फंक्शन (दोन्ही बाजूंचा डेटा सुरक्षित ठेवते)
+    // स्वयंचलित आणि सुरक्षित सिंक फंक्शन (डेटा आणि मीडिया सुरक्षित ठेवणारे)
     async function syncDataFromCloud() {
         if (WEB_APP_URL) {
             try {
@@ -911,7 +924,6 @@
                     let localData = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
                     let mergedMap = new Map();
 
-                    // आधी लोकल डेटा ऍड करणे
                     localData.forEach(item => {
                         if (item.visitDate) item.visitDate = sanitizeDate(item.visitDate);
                         if (typeof item.mediaFiles === 'string') {
@@ -921,7 +933,6 @@
                         mergedMap.set(key, item);
                     });
 
-                    // क्लाउड डेटा मर्ज करणे (जर आधीपासून नसेल तर किंवा अपडेटेड असेल तर)
                     cloudData.forEach(item => {
                         if (item.visitDate) item.visitDate = sanitizeDate(item.visitDate);
                         if (typeof item.mediaFiles === 'string') {
@@ -939,10 +950,10 @@
                     finalData = recalculateAllVisits(finalData);
 
                     localStorage.setItem("schoolVisitsData", JSON.stringify(finalData));
-                    saveDataToGoogleSheet(finalData); // क्लाउडवर अपडेटेड डेटा पाठवणे
+                    saveDataToGoogleSheet(finalData);
                     updateUI();
 
-                    alert("✅ डेटा यशस्वीरीत्या सिंक झाला आणि सर्व माहिती (मीडियासह) सुरक्षित आहे!");
+                    alert("✅ डेटा यशस्वीरीत्या सिंक झाला आणि सर्व माहिती (दिनांकासह) सुरक्षित आहे!");
                 } else {
                     alert("ℹ️ क्लाउडवर सध्या डेटा उपलब्ध नाही.");
                 }
@@ -961,7 +972,6 @@
         populateYears();
         setCurrentMonthAndYear();
         
-        // पेज सुरू झाल्यावर आपोआप क्लाउडवरून डेटा घेऊन लोकलस्टोरेजमध्ये सुरक्षित सिंक करेल
         if (WEB_APP_URL) {
             try {
                 let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
