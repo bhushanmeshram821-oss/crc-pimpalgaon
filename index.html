@@ -560,7 +560,7 @@
 <script>
     const APP_PASSWORD = "1234";
     // येथे तुमची गुगल वेब ऍप युआरएल (Google Web App URL) टाका
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwNYYJSX217mjo17zB-q9WEmQGLbBc4Fx3YW0Pie6BUPD_J9_AyoRFUxL7bVlD5BspoOQ/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxnCPnWFNQS7PMA6rQ9MnwuE4LJ0I9RJK_NqTKQFamyxyA5DvgwrC7qbaJ0xVEQ5gFReQ/exec";
 
     function startSystemWithPassword() {
         const pass = prompt("कृपया प्रणाली सुरू करण्यासाठी पासवर्ड टाका (Enter Password):");
@@ -939,7 +939,6 @@
                         if (!mergedMap.has(key)) {
                             mergedMap.set(key, item);
                         } else {
-                            // जर क्लाउडवर मीडिया किंवा तपशील असेल तर तो प्राधान्याने ठेवणे
                             let existing = mergedMap.get(key);
                             if ((!existing.mediaFiles || existing.mediaFiles.length === 0) && item.mediaFiles.length > 0) {
                                 existing.mediaFiles = item.mediaFiles;
