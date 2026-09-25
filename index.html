@@ -899,7 +899,7 @@
     }
 
     async function syncDataFromCloud() {
-        if (WEB_APP_URL && !WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbydOE7ubXRpZr6gOJbepzvS5_uA8tIwqPpcorL25hrEDfhObIGgR6naOsguqZQkbTEB/exec")) {
+        if (WEB_APP_URL) {
             try {
                 let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
                 let result = await response.json();
@@ -937,7 +937,7 @@
         populateYears();
         setCurrentMonthAndYear();
         
-        if (WEB_APP_URL && !WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbydOE7ubXRpZr6gOJbepzvS5_uA8tIwqPpcorL25hrEDfhObIGgR6naOsguqZQkbTEB/exec")) {
+        if (WEB_APP_URL) {
             try {
                 let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
                 let result = await response.json();
@@ -1208,7 +1208,7 @@
     }
 
     function saveDataToGoogleSheet(dataArray) {
-        if (!WEB_APP_URL || WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbydOE7ubXRpZr6gOJbepzvS5_uA8tIwqPpcorL25hrEDfhObIGgR6naOsguqZQkbTEB/exec")) return;
+        if (!WEB_APP_URL) return;
         let payload = dataArray.map(item => ({
             ...item,
             mediaFiles: JSON.stringify(item.mediaFiles || [])
@@ -1897,7 +1897,7 @@
     function downloadSummaryExcel() {
         const year = document.getElementById('summaryYear').value;
         const month = document.getElementById('summaryMonth').value;
-    let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
+        let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
 
         let filtered = data.filter(item => {
             if (!item.visitDate) return false;
