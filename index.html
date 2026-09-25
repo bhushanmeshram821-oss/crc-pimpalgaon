@@ -244,7 +244,7 @@
                     </div>
                     <div class="feature-item">
                         <b>📸 मीडिया अपलोड</b>
-                        प्रत्येक भेटीचे फोटो, PDF आणि व्हिडिओ सुरक्षितपणे साठवून पाहण्याची सुविधा.
+                        प्रत्येक भेटीचे फोटो, PDF आणि व्हिडिओ सुरक्षितपणे साठवून पाहण्याची सुविधा (Permanent Storage).
                     </div>
                 </div>
 
@@ -389,7 +389,7 @@
                 <div class="form-group">
                     <label for="visitMediaInput">📸 भेटीचे फोटो, PDF किंवा व्हिडिओ अपलोड करा (Upload Media):</label>
                     <input type="file" id="visitMediaInput" accept="image/*,application/pdf,video/*" multiple onchange="handleMediaFilesSelect(event)">
-                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स जोडू शकता.</small>
+                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स जोडू शकता (फाइल कायमस्वरूपी सेव्ह राहतील).</small>
                     <div id="mediaPreviewBox" class="media-preview-box"></div>
                 </div>
 
@@ -445,7 +445,7 @@
             <div style="margin-top: 20px;" id="printArea">
                 <h3 style="text-align: center; color: #2980b9; margin-bottom: 15px;"> दैनंदिन शाळा भेटीची नोंदवही - भूषणकुमार बा. मेश्राम</h3>
                 
-                <!-- वर्ष व महिना फिल्टर नियंत्रणे (Page 3 साठी जोडलेले) -->
+                <!-- वर्ष व महिना फिल्टर नियंत्रणे -->
                 <div class="summary-controls no-print" style="justify-content: center; margin-bottom: 15px;">
                     <div>
                         <label for="tableFilterYear" style="font-size: 12px; margin-bottom: 3px;">वर्ष निवडा:</label>
@@ -1009,7 +1009,7 @@
         const sumMonthEl = document.getElementById('summaryMonth');
         const tableMonthEl = document.getElementById('tableFilterMonth');
         if (sumMonthEl) sumMonthEl.value = m;
-        if (tableMonthEl) tableMonthEl.value = m; // डीफॉल्ट चालू महिना
+        if (tableMonthEl) tableMonthEl.value = m;
     }
 
     function onSchoolChange() {
@@ -1196,7 +1196,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(dataArray)
         }).catch(error => {
-            console.error("गुगल शीटवर डेटा बॅकग्राउंडला पाठवताना त्रुटी आली:", error);
+            console.error("गुगल शीटवर डेटा पाठवताना त्रुटी आली:", error);
         });
     }
 
@@ -1280,7 +1280,6 @@
     function editVisit(index) {
         let displayData = autoInsertSundays(JSON.parse(localStorage.getItem("schoolVisitsData") || "[]"));
         
-        // फिल्टर लागू असल्यास योग्य इंडेक्स शोधणे
         let filterYear = document.getElementById('tableFilterYear')?.value;
         let filterMonth = document.getElementById('tableFilterMonth')?.value;
         if (filterYear && filterMonth && filterMonth !== 'ALL') {
@@ -1469,7 +1468,6 @@
 
         localStorage.setItem("schoolVisitsData", JSON.stringify(data));
 
-        // पेज ३ वरील वर्ष व महिना फिल्टर लागू करणे
         const filterYear = document.getElementById('tableFilterYear')?.value;
         const filterMonth = document.getElementById('tableFilterMonth')?.value;
 
