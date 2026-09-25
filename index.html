@@ -558,7 +558,7 @@
 
 <script>
     const APP_PASSWORD = "1234";
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyRLh7W6HxWPk4uRKB7Z6wfGC2-r4bKyYQu6zKjUtWoVMFbboRdwHkfY88s3kFvS4p/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbydOE7ubXRpZr6gOJbepzvS5_uA8tIwqPpcorL25hrEDfhObIGgR6naOsguqZQkbTEB/exec";
 
     function startSystemWithPassword() {
         const pass = prompt("कृपया प्रणाली सुरू करण्यासाठी पासवर्ड टाका (Enter Password):");
@@ -777,6 +777,7 @@
 
     function renderMediaPreviewBox() {
         const box = document.getElementById('mediaPreviewBox');
+        if (!box) return;
         box.innerHTML = "";
         currentUploadedMedia.forEach((media, idx) => {
             let label = media.name.length > 20 ? media.name.substring(0, 18) + '...' : media.name;
@@ -898,7 +899,7 @@
     }
 
     async function syncDataFromCloud() {
-        if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
+        if (WEB_APP_URL && !WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbydOE7ubXRpZr6gOJbepzvS5_uA8tIwqPpcorL25hrEDfhObIGgR6naOsguqZQkbTEB/exec")) {
             try {
                 let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
                 let result = await response.json();
@@ -906,6 +907,12 @@
                     result.forEach(item => {
                         if (item.visitDate) {
                             item.visitDate = sanitizeDate(item.visitDate);
+                        }
+                        if (typeof item.mediaFiles === 'string') {
+                            try { item.mediaFiles = JSON.parse(item.mediaFiles); } catch(e) { item.mediaFiles = []; }
+                        }
+                        if (!Array.isArray(item.mediaFiles)) {
+                            item.mediaFiles = [];
                         }
                     });
                     result = recalculateAllVisits(result);
@@ -930,7 +937,7 @@
         populateYears();
         setCurrentMonthAndYear();
         
-        if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
+        if (WEB_APP_URL && !WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbydOE7ubXRpZr6gOJbepzvS5_uA8tIwqPpcorL25hrEDfhObIGgR6naOsguqZQkbTEB/exec")) {
             try {
                 let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
                 let result = await response.json();
@@ -938,6 +945,12 @@
                     result.forEach(item => {
                         if (item.visitDate) {
                             item.visitDate = sanitizeDate(item.visitDate);
+                        }
+                        if (typeof item.mediaFiles === 'string') {
+                            try { item.mediaFiles = JSON.parse(item.mediaFiles); } catch(e) { item.mediaFiles = []; }
+                        }
+                        if (!Array.isArray(item.mediaFiles)) {
+                            item.mediaFiles = [];
                         }
                     });
                     result = recalculateAllVisits(result);
@@ -1009,7 +1022,7 @@
         const sumMonthEl = document.getElementById('summaryMonth');
         const tableMonthEl = document.getElementById('tableFilterMonth');
         if (sumMonthEl) sumMonthEl.value = m;
-        if (tableMonthEl) tableMonthEl.value = m; // डीफॉल्ट चालू महिना
+        if (tableMonthEl) tableMonthEl.value = m; 
     }
 
     function onSchoolChange() {
@@ -1070,6 +1083,12 @@
         data.forEach(item => {
             if (item.visitDate) {
                 item.visitDate = sanitizeDate(item.visitDate);
+            }
+            if (typeof item.mediaFiles === 'string') {
+                try { item.mediaFiles = JSON.parse(item.mediaFiles); } catch(e) { item.mediaFiles = []; }
+            }
+            if (!Array.isArray(item.mediaFiles)) {
+                item.mediaFiles = [];
             }
         });
 
@@ -1189,12 +1208,16 @@
     }
 
     function saveDataToGoogleSheet(dataArray) {
-        if (!WEB_APP_URL || WEB_APP_URL.includes("your-script-url")) return;
+        if (!WEB_APP_URL || WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbydOE7ubXRpZr6gOJbepzvS5_uA8tIwqPpcorL25hrEDfhObIGgR6naOsguqZQkbTEB/exec")) return;
+        let payload = dataArray.map(item => ({
+            ...item,
+            mediaFiles: JSON.stringify(item.mediaFiles || [])
+        }));
         fetch(WEB_APP_URL, {
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dataArray)
+            body: JSON.stringify(payload)
         }).catch(error => {
             console.error("गुगल शीटवर डेटा बॅकग्राउंडला पाठवताना त्रुटी आली:", error);
         });
@@ -1280,7 +1303,6 @@
     function editVisit(index) {
         let displayData = autoInsertSundays(JSON.parse(localStorage.getItem("schoolVisitsData") || "[]"));
         
-        // फिल्टर लागू असल्यास योग्य इंडेक्स शोधणे
         let filterYear = document.getElementById('tableFilterYear')?.value;
         let filterMonth = document.getElementById('tableFilterMonth')?.value;
         if (filterYear && filterMonth && filterMonth !== 'ALL') {
@@ -1469,7 +1491,6 @@
 
         localStorage.setItem("schoolVisitsData", JSON.stringify(data));
 
-        // पेज ३ वरील वर्ष व महिना फिल्टर लागू करणे
         const filterYear = document.getElementById('tableFilterYear')?.value;
         const filterMonth = document.getElementById('tableFilterMonth')?.value;
 
@@ -1510,10 +1531,10 @@
                 : `<span class="status-badge status-completed">पूर्ण</span>`;
 
             let mediaHtml = "";
-            if (item.mediaFiles && item.mediaFiles.length > 0) {
+            if (item.mediaFiles && Array.isArray(item.mediaFiles) && item.mediaFiles.length > 0) {
                 item.mediaFiles.forEach((m, mIdx) => {
-                    let shortName = m.name.length > 12 ? m.name.substring(0, 10) + '...' : m.name;
-                    mediaHtml += `<a href="${m.dataUrl}" target="_blank" download="${m.name}" style="display:inline-block; margin:2px; font-size:11px; background:#e8f8f5; border:1px solid #27ae60; padding:2px 6px; border-radius:4px; text-decoration:none; color:#117a65;" title="${m.name}">📎 ${shortName}</a> `;
+                    let shortName = m.name && m.name.length > 12 ? m.name.substring(0, 10) + '...' : (m.name || 'File');
+                    mediaHtml += `<a href="${m.dataUrl}" target="_blank" download="${m.name || 'media'}" style="display:inline-block; margin:2px; font-size:11px; background:#e8f8f5; border:1px solid #27ae60; padding:2px 6px; border-radius:4px; text-decoration:none; color:#117a65;" title="${m.name || ''}">📎 ${shortName}</a> `;
                 });
             } else {
                 mediaHtml = "-";
@@ -1876,7 +1897,7 @@
     function downloadSummaryExcel() {
         const year = document.getElementById('summaryYear').value;
         const month = document.getElementById('summaryMonth').value;
-        let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
+    let data = JSON.parse(localStorage.getItem("schoolVisitsData") || "[]");
 
         let filtered = data.filter(item => {
             if (!item.visitDate) return false;
