@@ -559,8 +559,8 @@
 
 <script>
     const APP_PASSWORD = "1234";
-    // येथे तुमची गुगल वेब ऍप युआरएल (Google Web App URL) आहे
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2Abi-wnNLnGDjNdH0UjdqJcvX-0RE8QXcU5ShL0C7Piz84UI6rTHXggd8zKy5Bk7g/exec";
+    // येथे तुमची गुगल वेब ऍप युआरएल (Google Web App URL) टाका
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwNYYJSX217mjo17zB-q9WEmQGLbBc4Fx3YW0Pie6BUPD_J9_AyoRFUxL7bVlD5BspoOQ/exec";
 
     function startSystemWithPassword() {
         const pass = prompt("कृपया प्रणाली सुरू करण्यासाठी पासवर्ड टाका (Enter Password):");
@@ -844,7 +844,7 @@
         return false;
     }
 
-    // तारीख बदलू नये (एक दिवस मागे जाऊ नये) म्हणून लोकल तारीख पार्सिंग
+    // तारीख अचूक व सुरक्षित ठेवण्यासाठी (वेळ किंवा टाइमझोनमुळे बदल होऊ नये म्हणून)
     function sanitizeDate(dateStr) {
         if (!dateStr) return "";
         let str = String(dateStr).trim();
@@ -908,7 +908,7 @@
         }
     }
 
-    // क्लाउड आणि लॅपटॉप/मोबाईल डेटा सुरक्षित सिंक करणारे फंक्शन
+    // लॅपटॉप, मोबाईल आणि क्लाउड सिंक सुरक्षित ठेवणारे फंक्शन
     async function syncDataFromCloud() {
         if (WEB_APP_URL) {
             try {
@@ -938,6 +938,12 @@
                         let key = `${sanitizeDate(item.visitDate)}_${item.schoolName}`;
                         if (!mergedMap.has(key)) {
                             mergedMap.set(key, item);
+                        } else {
+                            // जर क्लाउडवर मीडिया किंवा तपशील असेल तर तो प्राधान्याने ठेवणे
+                            let existing = mergedMap.get(key);
+                            if ((!existing.mediaFiles || existing.mediaFiles.length === 0) && item.mediaFiles.length > 0) {
+                                existing.mediaFiles = item.mediaFiles;
+                            }
                         }
                     });
 
@@ -948,7 +954,7 @@
                     saveDataToGoogleSheet(finalData);
                     updateUI();
 
-                    alert("✅ डेटा आणि मीडिया यशस्वीरीत्या सिंक झाले!");
+                    alert("✅ लॅपटॉप, मोबाईल आणि शीट मधील सर्व डेटा व मीडिया यशस्वीरीत्या सिंक झाला!");
                 } else {
                     alert("ℹ️ क्लाउडवर सध्या डेटा उपलब्ध नाही.");
                 }
@@ -960,7 +966,6 @@
     }
 
     window.onload = async function() {
-        // आजची तारीख अचूक सेट करणे
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
