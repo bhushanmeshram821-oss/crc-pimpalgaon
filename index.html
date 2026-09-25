@@ -389,7 +389,7 @@
                 <div class="form-group">
                     <label for="visitMediaInput">📸 भेटीचे फोटो, PDF किंवा व्हिडिओ अपलोड करा (Upload Media):</label>
                     <input type="file" id="visitMediaInput" accept="image/*,application/pdf,video/*" multiple onchange="handleMediaFilesSelect(event)">
-                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स जोडू शकता (फाइल कायमस्वरूपी सेव्ह राहतील).</small>
+                    <small style="color: #7f8c8d; display: block; margin-top: 4px;">तुम्ही एकाच वेळी किंवा क्रमाने फोटो, पीडीएफ किंवा व्हिडिओ फाईल्स जोडू शकता (ह्या फाईल्स फॉर्ममध्ये कायमस्वरूपी सेव्ह राहतील).</small>
                     <div id="mediaPreviewBox" class="media-preview-box"></div>
                 </div>
 
@@ -558,7 +558,7 @@
 
 <script>
     const APP_PASSWORD = "1234";
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyRLh7W6HxWPk4uRKB7Z6wfGC2-r4bKyYQu6zKjUtWoVMFbboRdwHkfY88s3kFvS4p/exec";
+    const WEB_APP_URL = ""; // गुगल शीट URL अनिवार्य नाही, डेटा आणि फोटो थेट एचटीएमएल मध्ये सुरक्षित राहतील
 
     function startSystemWithPassword() {
         const pass = prompt("कृपया प्रणाली सुरू करण्यासाठी पासवर्ड टाका (Enter Password):");
@@ -897,56 +897,17 @@
         }
     }
 
-    async function syncDataFromCloud() {
-        if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
-            try {
-                let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
-                let result = await response.json();
-                if (Array.isArray(result) && result.length > 0) {
-                    result.forEach(item => {
-                        if (item.visitDate) {
-                            item.visitDate = sanitizeDate(item.visitDate);
-                        }
-                    });
-                    result = recalculateAllVisits(result);
-                    localStorage.setItem("schoolVisitsData", JSON.stringify(result));
-                    updateUI();
-                    alert("✅ क्लाउडवरून डेटा यशस्वीरीत्या सिंक झाला!");
-                } else {
-                    alert("ℹ️ क्लाउडवर सध्या कोणतीही जुनी नोंद उपलब्ध नाही किंवा शीट रिकामी आहे.");
-                }
-            } catch (error) {
-                console.error("सिंक करताना त्रुटी आली:", error);
-                alert("❌ डेटा सिंक करताना अडचण आली. कृपया इंटरनेट कनेक्शन किंवा URL तपासा.");
-            }
-        }
+    function syncDataFromCloud() {
+        alert("✅ सर्व डेटा आणि मीडिया फाईल्स तुमच्या ब्राउझरमध्ये कायमस्वरूपी सेव्ह आहेत!");
     }
 
-    window.onload = async function() {
+    window.onload = function() {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('visitDate').value = today;
         calDisplayDate = new Date();
 
         populateYears();
         setCurrentMonthAndYear();
-        
-        if (WEB_APP_URL && !WEB_APP_URL.includes("your-script-url")) {
-            try {
-                let response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
-                let result = await response.json();
-                if (Array.isArray(result) && result.length > 0) {
-                    result.forEach(item => {
-                        if (item.visitDate) {
-                            item.visitDate = sanitizeDate(item.visitDate);
-                        }
-                    });
-                    result = recalculateAllVisits(result);
-                    localStorage.setItem("schoolVisitsData", JSON.stringify(result));
-                }
-            } catch (e) {
-                console.log("Background sync offline fallback used.");
-            }
-        }
         updateUI();
     };
 
@@ -1188,18 +1149,6 @@
         historyBox.style.display = "block";
     }
 
-    function saveDataToGoogleSheet(dataArray) {
-        if (!WEB_APP_URL || WEB_APP_URL.includes("your-script-url")) return;
-        fetch(WEB_APP_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dataArray)
-        }).catch(error => {
-            console.error("गुगल शीटवर डेटा पाठवताना त्रुटी आली:", error);
-        });
-    }
-
     function saveOrUpdateVisit() {
         const centerCategory = document.getElementById('centerCategory').value;
         const schoolName = document.getElementById('schoolName').value;
@@ -1239,7 +1188,6 @@
         data = recalculateAllVisits(data);
 
         localStorage.setItem("schoolVisitsData", JSON.stringify(data));
-        saveDataToGoogleSheet(data);
 
         resetFormAndSub();
         document.getElementById('currentOngoingCount').innerText = "0";
@@ -1387,7 +1335,6 @@
             data = recalculateAllVisits(data);
 
             localStorage.setItem("schoolVisitsData", JSON.stringify(data));
-            saveDataToGoogleSheet(data);
 
             if (editingIndex === index) {
                 editingIndex = -1;
